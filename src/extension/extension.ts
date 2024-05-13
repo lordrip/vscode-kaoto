@@ -14,40 +14,49 @@
  * limitations under the License.
  */
 
-import { backendI18nDefaults, backendI18nDictionaries } from "@kie-tools-core/backend/dist/i18n";
-import { VsCodeBackendProxy } from "@kie-tools-core/backend/dist/vscode";
-import { EditorEnvelopeLocator, EnvelopeContentType, EnvelopeMapping } from "@kie-tools-core/editor/dist/api";
-import { I18n } from "@kie-tools-core/i18n/dist/core";
-import * as KogitoVsCode from "@kie-tools-core/vscode-extension/dist";
-import { getRedHatService, TelemetryService } from "@redhat-developer/vscode-redhat-telemetry";
-import * as vscode from "vscode";
-import { KAOTO_FILE_PATH_GLOB } from "./helpers";
+import { backendI18nDefaults, backendI18nDictionaries } from '@kie-tools-core/backend/dist/i18n';
+import { VsCodeBackendProxy } from '@kie-tools-core/backend/dist/vscode';
+import {
+  EditorEnvelopeLocator,
+  EnvelopeContentType,
+  EnvelopeMapping,
+} from '@kie-tools-core/editor/dist/api';
+import { I18n } from '@kie-tools-core/i18n/dist/core';
+import * as KogitoVsCode from '@kie-tools-core/vscode-extension/dist';
+import { TelemetryService, getRedHatService } from '@redhat-developer/vscode-redhat-telemetry';
+import * as vscode from 'vscode';
+import { KaotoEditorChannelApiProducer } from '../api/KaotoEditorChannelApiProducer';
+import { KAOTO_FILE_PATH_GLOB } from './helpers';
+import { KubernetesService } from '../services/KubernetesService';
 
 let backendProxy: VsCodeBackendProxy;
 let telemetryService: TelemetryService;
 
 export async function activate(context: vscode.ExtensionContext) {
-  console.info("Kaoto Editor extension is alive.");
+  console.info('Kaoto Editor extension is alive.');
 
   const backendI18n = new I18n(backendI18nDefaults, backendI18nDictionaries, vscode.env.language);
   backendProxy = new VsCodeBackendProxy(context, backendI18n);
 
   KogitoVsCode.startExtension({
-    extensionName: "redhat.vscode-kaoto",
-    context: context,
-    viewType: "webviewEditorsKaoto",
-    editorEnvelopeLocator: new EditorEnvelopeLocator("vscode", [
+    extensionName: 'redhat.vscode-kaoto',
+    context,
+    viewType: 'webviewEditorsKaoto',
+    editorEnvelopeLocator: new EditorEnvelopeLocator('vscode', [
       new EnvelopeMapping({
-        type: "kaoto",
+        type: 'kaoto',
         filePathGlob: KAOTO_FILE_PATH_GLOB,
-        resourcesPathPrefix: "dist/webview/editors/kaoto",
+        resourcesPathPrefix: 'dist/webview/editors/kaoto',
         envelopeContent: {
           type: EnvelopeContentType.PATH,
-          path: "dist/webview/KaotoEditorEnvelopeApp.js"
-        }
+          path: 'dist/webview/KaotoEditorEnvelopeApp.js',
+        },
       }),
     ]),
-    backendProxy: backendProxy,
+    backendProxy,
+    channelApiProducer: new KaotoEditorChannelApiProducer({
+      k8s: new KubernetesService(),
+    }),
   });
 
   vscode.commands.registerCommand('kaoto.open', (uri: vscode.Uri) => {
