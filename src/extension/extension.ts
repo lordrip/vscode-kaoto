@@ -89,6 +89,11 @@ export async function activate(context: vscode.ExtensionContext) {
 	contextHandler.registerDeploymentsView(portManager);
 
 	/*
+	 * register 'Infrastructure' view provider
+	 */
+	contextHandler.registerInfrastructureView();
+
+	/*
 	 * register 'Help & Feedback' view provider
 	 */
 	contextHandler.registerHelpAndFeedbackView();

@@ -32,6 +32,9 @@ import { CamelRunJBangTask } from '../tasks/CamelRunJBangTask';
 import { CamelAddPluginJBangTask } from '../tasks/CamelAddPluginJBangTask';
 import { CamelKubernetesRunJBangTask } from '../tasks/CamelKubernetesRunJBangTask';
 import { DeploymentsProvider } from '../views/providers/DeploymentsProvider';
+import { InfrastructureProvider } from '../views/providers/InfrastructureProvider';
+import { InfrastructureItem } from '../views/infrastructureTreeItems/InfrastructureItem';
+import { InfraImplementationItem } from '../views/infrastructureTreeItems/InfraImplementationItem';
 import { PortManager } from '../helpers/PortManager';
 import { ParentItem } from '../views/deploymentTreeItems/ParentItem';
 import { CamelStopJBangTask } from '../tasks/CamelStopJBangTask';
@@ -332,6 +335,115 @@ export class ExtensionContextHandler {
 				await deploymentsProvider.waitUntilRouteHasState(route.parentIntegration.port, route.label as string, 'Suspended');
 				deploymentsProvider.refresh();
 				await this.sendCommandTrackingEvent(DEPLOYMENTS_ROUTE_SUSPEND_COMMAND_ID);
+			}),
+		);
+	}
+
+	public registerInfrastructureView() {
+		const infrastructureProvider = new InfrastructureProvider();
+		this.context.subscriptions.push(vscode.commands.registerCommand('kaoto.infrastructure.refresh', () => infrastructureProvider.refresh()));
+		this.context.subscriptions.push({
+			dispose: () => infrastructureProvider.dispose(),
+		});
+		const infrastructureTreeView = vscode.window.createTreeView('kaoto.infrastructure', {
+			treeDataProvider: infrastructureProvider,
+			showCollapseAll: true,
+		});
+		this.context.subscriptions.push(infrastructureTreeView);
+		
+		// stop auto-refresh when a view is not visible
+		this.context.subscriptions.push(
+			infrastructureTreeView.onDidChangeVisibility((event) => {
+				if (event.visible) {
+					infrastructureProvider.refresh();
+				} else {
+					console.warn('[InfrastructureProvider] Auto-refresh stopped');
+					infrastructureProvider.dispose();
+				}
+			}),
+		);
+		
+		// register infrastructure service commands
+		this.registerInfrastructureCommands(infrastructureProvider);
+	}
+
+	private registerInfrastructureCommands(infrastructureProvider: InfrastructureProvider) {
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.run', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const alias = item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias;
+				const success = await infrastructureProvider.startService(alias);
+				if (success) {
+					await this.sendCommandTrackingEvent('kaoto.infrastructure.run');
+				}
+			}),
+		);
+
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.stop', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const alias = item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias;
+				const success = await infrastructureProvider.stopService(alias);
+				if (success) {
+					await this.sendCommandTrackingEvent('kaoto.infrastructure.stop');
+				}
+			}),
+		);
+
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.logs', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const alias = item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias;
+				const logs = await infrastructureProvider.getServiceLogs(alias);
+				
+				// Show logs in output channel or terminal
+				const outputChannel = vscode.window.createOutputChannel(`Infrastructure Logs - ${alias}`);
+				outputChannel.clear();
+				outputChannel.appendLine(logs);
+				outputChannel.show();
+				
+				await this.sendCommandTrackingEvent('kaoto.infrastructure.logs');
+			}),
+		);
+
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.copyUrl', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const state = infrastructureProvider.getServiceState(item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias);
+				if (state?.connectionParams?.url) {
+					await vscode.env.clipboard.writeText(state.connectionParams.url);
+					vscode.window.showInformationMessage(`Connection URL copied to clipboard: ${state.connectionParams.url}`);
+				} else {
+					vscode.window.showWarningMessage('No connection URL available for this service');
+				}
+				await this.sendCommandTrackingEvent('kaoto.infrastructure.copyUrl');
+			}),
+		);
+
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.copyCredentials', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const state = infrastructureProvider.getServiceState(item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias);
+				if (state?.connectionParams?.username && state?.connectionParams?.password) {
+					const credentials = `Username: ${state.connectionParams.username}\nPassword: ${state.connectionParams.password}`;
+					await vscode.env.clipboard.writeText(credentials);
+					vscode.window.showInformationMessage('Credentials copied to clipboard');
+				} else {
+					vscode.window.showWarningMessage('No credentials available for this service');
+				}
+				await this.sendCommandTrackingEvent('kaoto.infrastructure.copyCredentials');
+			}),
+		);
+
+		this.context.subscriptions.push(
+			vscode.commands.registerCommand('kaoto.infrastructure.showConnectionInfo', async (item: InfrastructureItem | InfraImplementationItem) => {
+				const state = infrastructureProvider.getServiceState(item instanceof InfraImplementationItem ? item.getFullAlias() : item.alias);
+				if (state?.connectionParams) {
+					const info = Object.entries(state.connectionParams)
+						.filter(([_, value]) => value !== undefined && value !== '')
+						.map(([key, value]) => `${key}: ${value}`)
+						.join('\n');
+					
+					vscode.window.showInformationMessage(`Connection Info for ${item.alias}:\n${info}`, { modal: true });
+				} else {
+					vscode.window.showWarningMessage('No connection information available for this service');
+				}
+				await this.sendCommandTrackingEvent('kaoto.infrastructure.showConnectionInfo');
 			}),
 		);
 	}

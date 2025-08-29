@@ -225,6 +225,48 @@
         "title": "Stop",
         "category": "Kaoto",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "kaoto.infrastructure.refresh",
+        "title": "Refresh",
+        "category": "Kaoto",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "kaoto.infrastructure.run",
+        "title": "Start Service",
+        "category": "Kaoto",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "kaoto.infrastructure.stop",
+        "title": "Stop Service",
+        "category": "Kaoto",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "kaoto.infrastructure.logs",
+        "title": "Show Logs",
+        "category": "Kaoto",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "kaoto.infrastructure.copyUrl",
+        "title": "Copy Connection URL",
+        "category": "Kaoto",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "kaoto.infrastructure.copyCredentials",
+        "title": "Copy Credentials",
+        "category": "Kaoto",
+        "icon": "$(key)"
+      },
+      {
+        "command": "kaoto.infrastructure.showConnectionInfo",
+        "title": "Show Connection Details",
+        "category": "Kaoto",
+        "icon": "$(info)"
       }
     ],
     "keybindings": {
@@ -352,6 +394,11 @@
           "command": "kaoto.deployments.refresh",
           "group": "navigation",
           "when": "view == kaoto.deployments"
+        },
+        {
+          "command": "kaoto.infrastructure.refresh",
+          "group": "navigation",
+          "when": "view == kaoto.infrastructure"
         }
       ],
       "view/item/context": [
@@ -409,6 +456,36 @@
           "command": "kaoto.deployments.route.stop",
           "group": "inline@4",
           "when": "view == kaoto.deployments && viewItem =~ /^.*stopEnabled.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.run",
+          "group": "inline@1",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-stopped.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.stop",
+          "group": "inline@1",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-running.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.logs",
+          "group": "navigation@1",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-running.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.copyUrl",
+          "group": "navigation@2",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-running.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.copyCredentials",
+          "group": "navigation@3",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-running.*$/"
+        },
+        {
+          "command": "kaoto.infrastructure.showConnectionInfo",
+          "group": "navigation@4",
+          "when": "view == kaoto.infrastructure && viewItem =~ /^infrastructure-running.*$/"
         }
       ]
     },
@@ -612,6 +689,14 @@
         {
           "id": "kaoto.deployments",
           "name": "Deployments",
+          "contextualTitle": "Kaoto",
+          "icon": "icons/kaoto.png",
+          "initialSize": 2,
+          "when": "!virtualWorkspace && kaoto.jbangAvailable"
+        },
+        {
+          "id": "kaoto.infrastructure",
+          "name": "Infrastructure",
           "contextualTitle": "Kaoto",
           "icon": "icons/kaoto.png",
           "initialSize": 2,

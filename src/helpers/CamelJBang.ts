@@ -131,6 +131,69 @@ export class CamelJBang {
 		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'cmd', `${operation}-route`, integration, `--id=${routeId}`]);
 	}
 
+	public infraList(): ShellExecution {
+		const env: { [key: string]: string } = {};
+		for (const [key, value] of Object.entries(process.env)) {
+			if (value !== undefined) {
+				env[key] = value;
+			}
+		}
+		const shellExecOptions: ShellExecutionOptions = { env };
+		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'infra', 'list', '--json'], shellExecOptions);
+	}
+
+	public infraPs(): ShellExecution {
+		const env: { [key: string]: string } = {};
+		for (const [key, value] of Object.entries(process.env)) {
+			if (value !== undefined) {
+				env[key] = value;
+			}
+		}
+		const shellExecOptions: ShellExecutionOptions = { env };
+		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'infra', 'ps', '--json'], shellExecOptions);
+	}
+
+	public infraRun(serviceAlias: string): ShellExecution {
+		const env: { [key: string]: string } = {};
+		for (const [key, value] of Object.entries(process.env)) {
+			if (value !== undefined) {
+				env[key] = value;
+			}
+		}
+		
+		// Fix Docker host environment variable expansion for Testcontainers
+		// The .testcontainers.properties file has docker.host=unix://${XDG_RUNTIME_DIR}/podman/podman.sock
+		// but Java doesn't expand environment variables, so we need to set DOCKER_HOST explicitly
+		if (env.XDG_RUNTIME_DIR) {
+			env.DOCKER_HOST = `unix://${env.XDG_RUNTIME_DIR}/podman/podman.sock`;
+		}
+		
+		const shellExecOptions: ShellExecutionOptions = { env };
+		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'infra', 'run', serviceAlias, '--background'], shellExecOptions);
+	}
+
+	public infraStop(serviceAlias: string): ShellExecution {
+		const env: { [key: string]: string } = {};
+		for (const [key, value] of Object.entries(process.env)) {
+			if (value !== undefined) {
+				env[key] = value;
+			}
+		}
+		const shellExecOptions: ShellExecutionOptions = { env };
+		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'infra', 'stop', serviceAlias], shellExecOptions);
+	}
+
+	public infraLogs(serviceAlias: string): ShellExecution {
+		const env: { [key: string]: string } = {};
+		for (const [key, value] of Object.entries(process.env)) {
+			if (value !== undefined) {
+				env[key] = value;
+			}
+		}
+		const shellExecOptions: ShellExecutionOptions = { env };
+		return new ShellExecution(this.jbang, [...this.defaultJbangArgs, 'infra', 'log', serviceAlias], shellExecOptions);
+	}
+
 	public async getRuntimeInfoFromMavenContext(integrationFilePath: string): Promise<RuntimeMavenInformation | undefined> {
 		const folderOfpomXml = this.findFolderOfPomXml(integrationFilePath);
 		if (folderOfpomXml !== undefined) {
