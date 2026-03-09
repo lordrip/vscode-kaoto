@@ -130,8 +130,7 @@ const commonConfig = (env) => {
 			new CopyPlugin({
 				patterns: [
 					{
-						/* TODO: This needs to change to read the camel catalog from @kaoto/camel-catalog */
-						from: 'node_modules/@kaoto/kaoto/lib/camel-catalog',
+						from: 'node_modules/@kaoto/camel-catalog/dist/camel-catalog',
 						to: 'webview/editors/kaoto/camel-catalog',
 					},
 				],

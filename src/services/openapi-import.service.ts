@@ -145,13 +145,17 @@ export class OpenApiImportService {
 	 * Cache for resolved references to prevent infinite loops in circular references.
 	 * Maps $ref paths to their resolved values.
 	 */
-	private referenceCache: Map<string, unknown> = new Map();
+	private readonly referenceCache: Map<string, unknown> = new Map();
 
 	/**
 	 * The current OpenAPI specification being processed.
 	 * Used for resolving internal references.
 	 */
 	private currentSpec?: OpenApi;
+
+	private readonly BRACES_REGEXP = /[{}/]/g;
+	private readonly MULTIPLE_DASH_REGEXP = /^-+|-+$/g;
+	private readonly DASH_REGEXP = /-+/g;
 
 	/**
 	 * Parses an OpenAPI v3 specification and generates Camel entities.
@@ -331,10 +335,8 @@ export class OpenApiImportService {
 	 * @returns Generated operation ID
 	 */
 	private generateOperationId(method: string, path: string): string {
-		const sanitizedPath = path
-			.replace(/\{|\}/g, '')
-			.replace(/\//g, '-')
-			.replace(/^-+|-+$/g, '');
+		const sanitizedPath = path.replaceAll(this.BRACES_REGEXP, '-').replaceAll(this.MULTIPLE_DASH_REGEXP, '').replaceAll(this.DASH_REGEXP, '-');
+
 		return `${method}-${sanitizedPath}`;
 	}
 
@@ -672,7 +674,7 @@ export class OpenApiImportService {
 			}
 
 			// Decode URI-encoded segments (e.g., "~1" -> "/", "~0" -> "~")
-			const decodedSegment = segment.replace(/~1/g, '/').replace(/~0/g, '~');
+			const decodedSegment = segment.replaceAll('~1', '/').replaceAll('~0', '~');
 			current = current[decodedSegment];
 		}
 
